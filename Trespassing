@@ -1,0 +1,66 @@
+local Players = game:GetService("Players")
+local Teams = game:GetService("Teams")
+
+-- Table of stations
+local stations = {
+    game.Workspace:WaitForChild("RockawayAve"),
+    game.Workspace:WaitForChild("Junius"),
+    game.Workspace:WaitForChild("SaratogaAve")
+}
+
+-- Table to map part names to station names
+local stationAliases = {
+    Juni = "Junius",
+    Rway = "RockawayAve",
+    Toga = "SaratogaAve"
+}
+
+-- Function to send alert to NYPD team
+local function alertNYPD(stationName)
+    -- Find the NYPD team
+    local NYPDTeam = Teams:FindFirstChild("NYPD")
+    if not NYPDTeam then
+        warn("NYPD team not found!")
+        return
+    end
+    
+    -- Send the message to all players on the NYPD team
+    for _, player in pairs(NYPDTeam:GetPlayers()) do
+        player:WaitForChild("PlayerGui"):SetCore("ChatMakeSystemMessage", {
+            Text = "A trespasser has been reported at the " .. stationName .. " Station, Please Check The Cameras";
+            Color = Color3.fromRGB(255, 0, 0); -- Red message
+            Font = Enum.Font.SourceSansBold;
+            TextSize = 18;
+        })
+    end
+end
+
+-- Function to detect when a player steps on a station
+local function onStationTouched(hit, station)
+    local character = hit.Parent
+    local player = Players:GetPlayerFromCharacter(character)
+    
+    -- Ensure that it's a valid player touching the station
+    if player then
+        -- Check if the hit part corresponds to one of the station aliases
+        local touchedStation = stationAliases[hit.Name]
+        if touchedStation then
+            -- Send alert to NYPD
+            alertNYPD(touchedStation)
+        else
+            -- If it's not a known alias, default to the station's name
+            alertNYPD(station.Name)
+        end
+    end
+end
+
+-- Connect touch events to stations
+for _, station in pairs(stations) do
+    if station:IsA("Part") then  -- Make sure it's a part
+        station.Touched:Connect(function(hit)
+            onStationTouched(hit, station)
+        end)
+    else
+        warn(station.Name .. " is not a valid Part object.")
+    end
+end
