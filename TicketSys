@@ -1,0 +1,111 @@
+-- Local variables to track player status
+local PlayerIsNearMachine = false
+local PlayerIsInSubway = false
+local PlayerHasTicket= false
+local PlayerUsingTicketMachine = false
+local ExitMessageShowing = false
+local TICKET = { PRICE = 5.00 }
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Tools = ReplicatedStorage:WaitForChild("Tools")
+local TicketMachines = game.Workspace:WaitForChild("TicketMachines")
+-- Function to check if the player is near a TicketMachine
+local function CheckPlayerProximity(player)
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+for _, machine in pairs(TicketMachines:GetChildren()) do
+if machine:IsA("Model") and machine.Name == "TicketMachine" then
+local distance = (rootPart.Position - machine.PrimaryPart.Position).Magnitude
+if distance <= 5 then
+return true
+end
+end
+end
+return false
+end
+-- Function to check if the player has a valid metro ticket
+local function PlayerHasValidTicket(player)
+return player.Backpack:FindFirstChild("Ticket") or
+player.Backpack:FindFirstChild("MetroCard") or
+player.Backpack:FindFirstChild("OMNYPass") or
+player.Character:FindFirstChild("Ticket") or
+player.Character:FindFirstChild("MetroCard") or
+player.Character:FindFirstChild("OMNYPass")
+end
+-- Function to show a message when the player can buy a ticket
+local function ShowBuyTicketMessage(player)
+local messageColor = Color3.fromRGB(255, 255, 0) -- Yellow color
+local priceMessage = "[BUY TICKET] [$" .. string.format("%.2f", TICKET.PRICE) .. "]"
+game.StarterGui:SetCore("ChatMakeSystemMessage", {
+Text = priceMessage;
+Color = messageColor;
+Font = Enum.Font.SourceSansBold;
+TextSize = 18;
+})
+end
+-- Function to handle ticket purchases
+local function HandleTicketPurchase(player)
+local wallet = player:FindFirstChild("playerdata"):FindFirstChild("stats"):FindFirstChild("wallet")
+if wallet and wallet.Value >= TICKET.PRICE then
+wallet.Value = wallet.Value - TICKET.PRICE
+-- Ticket purchased successfully
+game.StarterGui:SetCore("ChatMakeSystemMessage", {
+Text = "[SUCCESS] Ticket purchased for $" .. string.format("%.2f", TICKET.PRICE);
+Color = Color3.fromRGB(0, 255, 0); -- Green color
+Font = Enum.Font.SourceSansBold;
+TextSize = 18;
+})
+PlayerHasTicket = true -- Update that the player now has a valid ticket
+else
+-- Insufficient funds
+game.StarterGui:SetCore("ChatMakeSystemMessage", {
+Text = "[Funds are insufficient]";
+Color = Color3.fromRGB(255, 0, 0); -- Red color
+Font = Enum.Font.SourceSansItalic;
+TextSize = 18;
+})
+end
+end
+-- Main loop to check for proximity and handle ticket purchases
+game:GetService("RunService").RenderStepped:Connect(function()
+local player = game.Players.LocalPlayer -- Assuming LocalScript
+-- Check if the player is near a TicketMachine
+if CheckPlayerProximity(player) then
+PlayerIsNearMachine = true
+-- Adjust ticket price if player holds OMNYPass
+if player.Backpack:FindFirstChild("OMNYPass") or player.Character:FindFirstChild("OMNYPass") then
+TICKET.PRICE = 2.00
+else
+TICKET.PRICE = 5.00
+end
+-- Show message to buy a ticket
+if not PlayerUsingTicketMachine then
+ShowBuyTicketMessage(player)
+end
+-- Check if the player presses "E" to buy a ticket
+if PlayerIsNearMachine and game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.E) then
+PlayerUsingTicketMachine = true
+HandleTicketPurchase(player)
+PlayerUsingTicketMachine = false
+end
+else
+PlayerIsNearMachine = false
+end
+-- Logic for checking if player is in the subway and has a ticket
+if PlayerIsInSubway then
+if PlayerHasTicket then
+-- Logic for player in subway with valid ticket
+elseif not ShowingExitMetroMessage then
+-- Show message to exit if player has no ticket
+ShowingExitMetroMessage = true
+game.StarterGui:SetCore("ChatMakeSystemMessage", {
+Text = "[EXIT] You must leave the metro without a valid ticket.";
+Color = Color3.fromRGB(255, 0, 0); -- Red color
+Font = Enum.Font.SourceSansBold;
+TextSize = 18;
+})
+end
+else
+= false
+end
+end) 
+k
