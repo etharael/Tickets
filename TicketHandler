@@ -1,0 +1,28 @@
+local UserInputService = game:GetService("UserInputService")
+local player = game.Players.LocalPlayer
+local TicketSys = require(game:GetService("ReplicatedStorage"):WaitForChild("TicketSys")) -- Assuming TicketSys is a ModuleScript
+local keyPressed = false
+
+-- Detect when the player presses the "E" key
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end  -- Ignore if the game is processing something else
+
+    if input.KeyCode == Enum.KeyCode.E then
+        keyPressed = true
+        TicketSys.HandleTicketPurchase(player)  -- Trigger the ticket purchase from TicketSys
+    end
+end)
+
+-- Detect when the player releases the "E" key
+UserInputService.InputEnded:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.E then
+        keyPressed = false
+    end
+end)
+
+-- Additional logic to ensure the player is near the ticket machine
+game:GetService("RunService").RenderStepped:Connect(function()
+    if keyPressed and TicketSys.CheckPlayerProximity(player) then
+        TicketSys.HandleTicketPurchase(player)  -- If player presses E near the machine, handle the purchase
+    end
+end)
